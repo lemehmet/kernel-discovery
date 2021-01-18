@@ -1,20 +1,27 @@
 import argparse
 import logging
 import os
+import re
+import platform
 from distutils.version import LooseVersion
 
 import requests
 
 from bs4 import BeautifulSoup
 
-logging.basicConfig(level=logging.DEBUG)
-parser = argparse.ArgumentParser()
+vers = re.split('[.-]', platform.release())
+current_kernel_version = "0.0.0"
+if len(vers) >= 3:
+    current_kernel_version = f"{vers[0]}.{vers[1]}.{vers[2]}"
+
+logging.basicConfig(level=logging.INFO)
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-r", "--repository", action="store",
                     help="The url for the custom kernel repository",
                     default="https://kernel.ubuntu.com/~kernel-ppa/mainline/")
 parser.add_argument("--min-version", action="store",
                     help="Ignore earlier versions",
-                    default="5.10.4")
+                    default=current_kernel_version)
 parser.add_argument("--arch", action="store",
                     help="Use architecture",
                     default="amd64")
@@ -58,7 +65,7 @@ def find_latest() -> (str, LooseVersion):
 
 
 def extract_urls(folder: str) -> []:
-    req = requests.get(f"{args.repository}{folder}/{args.arch}")
+    req = requests.get(f"{args.repository}{folder}{args.arch}")
     soup = BeautifulSoup(req.content, 'html.parser')
     kernel_type = "lowlatency" if args.low_latency else "generic"
     urls = []
@@ -74,11 +81,13 @@ def download_files(folder: str, files: []):
     try:
         if not os.path.exists(output_path):
             os.mkdir(output_path)
+        else:
+            logging.error(f"Output folder already exist, to re-download please delete: {output_path}")
     except OSError:
         logging.error(f"Unable to create output folder {output_path}")
         return
     for filename in files:
-        url = f"{args.repository}{folder}/{args.arch}/{filename}"
+        url = f"{args.repository}{folder}{args.arch}/{filename}"
         logging.info(f"Downloading {url}")
         r = requests.get(url)
         logging.info(f"Downloaded {len(r.content)} in {r.elapsed}")
@@ -96,6 +105,7 @@ def main():
         logging.info(f"Got the list {files}")
         if len(files) > 0:
             download_files(folder, files)
+
 
 if __name__ == '__main__':
     main()
