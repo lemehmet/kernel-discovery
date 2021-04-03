@@ -4,8 +4,9 @@ This tool finds and downloads the latest version of custom Ubuntu kernels.
 ## Why?
 I am using a notebook with an 11th Gen Intel(R) Core(TM) i7-1165G7 processor, 
 which has a different set of power state and is not properly supported by the mainline Ubuntu kernels. 
-The only way to find and download the customer kernels is to open 
-the [Ubuntu ppa](https://kernel.ubuntu.com/~kernel-ppa/mainline/) page and perform the [same manual steps](https://itsfoss.com/upgrade-linux-kernel-ubuntu/#install-manually).
+The upstream kernels have better support after 5.10.4 but the only way to find and download the custom kernels is to open 
+the [Ubuntu ppa](https://kernel.ubuntu.com/~kernel-ppa/mainline/) page and perform 
+the [same manual steps](https://itsfoss.com/upgrade-linux-kernel-ubuntu/#install-manually).
 This tool automatizes the discovery and download process
 
 ## Usage
