@@ -14,7 +14,7 @@ current_kernel_version = "0.0.0"
 if len(vers) >= 3:
     current_kernel_version = f"{vers[0]}.{vers[1]}.{vers[2]}"
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-r", "--repository", action="store",
                     help="The url for the custom kernel repository",
@@ -54,13 +54,13 @@ def find_latest() -> (str, LooseVersion):
                 continue
             if v < min_version:
                 continue
-            logging.info(f"Folder: {href} Parsed: {v} Comps: {v.version}")
+            logging.info("Folder: %s Parsed: %s Comps: %s", href, v, v.version)
             if selected[0] is None or selected[1] < v:
                 selected = (folder, v)
         except TypeError as e:
-            logging.warning(f"TypeError: '{href}' {v} {min_version} Err: {e}")
+            logging.warning("TypeError: %s  %s Err: %s", href, v, e)
         except:
-            logging.warning(f"Failed while working on link '{href}'")
+            logging.warning("Failed while working on link %s", href)
     return selected
 
 
@@ -69,7 +69,11 @@ def extract_urls(folder: str) -> []:
     soup = BeautifulSoup(req.content, 'html.parser')
     kernel_type = "lowlatency" if args.low_latency else "generic"
     urls = []
-    for link in soup.find_all('a'):
+    links = soup.find_all('a')
+    if not links:
+        logging.error("The document has no links: %s", req.content)
+    for link in links:
+        logging.debug("Processing link: %s", link)
         url = link.get('href')
         if kernel_type in url or 'all' in url:
             urls.append(url)
@@ -82,15 +86,15 @@ def download_files(folder: str, files: []):
         if not os.path.exists(output_path):
             os.mkdir(output_path)
         else:
-            logging.error(f"Output folder already exist, to re-download please delete: {output_path}")
+            logging.error("Output folder already exist, to re-download please delete: %s", output_path)
     except OSError:
-        logging.error(f"Unable to create output folder {output_path}")
+        logging.error("Unable to create output folder %s", output_path)
         return
     for filename in files:
         url = f"{args.repository}{folder}{args.arch}/{filename}"
-        logging.info(f"Downloading {url}")
+        logging.info("Downloading %s", url)
         r = requests.get(url)
-        logging.info(f"Downloaded {len(r.content)} in {r.elapsed}")
+        logging.info("Downloaded %s in %s", len(r.content), r.elapsed)
         with open(f"{output_path}/{filename}", 'wb') as f:
             f.write(r.content)
 
@@ -98,11 +102,11 @@ def download_files(folder: str, files: []):
 def main():
     logging.info("Starting kernel downloader")
     latest_version = find_latest()
-    logging.info(f"Found latest version: {latest_version[1]}")
+    logging.info("Found latest version: %s", latest_version[1])
     folder = latest_version[0]
     if folder is not None:
         files = extract_urls(folder)
-        logging.info(f"Got the list {files}")
+        logging.info("Got the list %s", files)
         if len(files) > 0:
             download_files(folder, files)
 
